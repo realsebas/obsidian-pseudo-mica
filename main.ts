@@ -47,21 +47,40 @@ export default class PsuedoMica extends Plugin {
       const base64Image = (await fs.readFile(wallpaperPath)).toString("base64");
       document.head.appendChild(this.styleEl);
 
-      const updatePosition = () => {
-        const {
-          screenX,
-          screenY,
-          screen: { width, height },
-        } = window;
+      // Set static styles once
+      const staticStyles = document.createElement("style");
+      staticStyles.textContent = `
+            .horizontal-main-container::before {
+                width: ${window.screen.width}px;
+                height: ${window.screen.height}px;
+                background-image: url(data:image/jpeg;base64,${base64Image});
+            }
+        `;
+      document.head.appendChild(staticStyles);
 
-        // Only update if position or size has changed
-        if (this.lastPosition.x === screenX && this.lastPosition.y === screenY && this.lastPosition.width === width && this.lastPosition.height === height) {
+      const updatePosition = () => {
+        const { screenX, screenY } = window;
+
+        // Only update if position has changed
+        if (this.lastPosition.x === screenX && this.lastPosition.y === screenY) {
           this.scheduleNextUpdate();
           return;
         }
 
-        this.lastPosition = { x: screenX, y: screenY, width, height };
-        this.styleEl.textContent = `.horizontal-main-container::before{width:${width}px;height:${height}px;top:${-screenY}px;left:${-screenX}px;background-image:url(data:image/jpeg;base64,${base64Image})}`;
+        this.lastPosition = {
+          x: screenX,
+          y: screenY,
+          width: window.screen.width,
+          height: window.screen.height,
+        };
+
+        // Only update position-related styles
+        this.styleEl.textContent = `
+                .horizontal-main-container::before {
+                    top: ${-screenY}px;
+                    left: ${-screenX}px;
+                }
+            `;
         this.scheduleNextUpdate();
       };
 
@@ -88,6 +107,7 @@ export default class PsuedoMica extends Plugin {
         }
         window.removeEventListener("resize", debouncedResize);
         this.styleEl.remove();
+        staticStyles.remove();
       });
     } catch (error) {
       console.error("Failed to set wallpaper background:", error);
