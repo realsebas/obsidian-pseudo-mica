@@ -2,7 +2,7 @@ import { Plugin } from "obsidian";
 import { promisify } from "util";
 import * as fs from "fs/promises";
 
-export default class PsuedoMica extends Plugin {
+export default class CupertinoCompanion extends Plugin {
   private styleEl = document.createElement("style");
   private readonly exec = promisify(require("child_process").exec);
   private lastPosition = { x: 0, y: 0, width: 0, height: 0 };
@@ -16,17 +16,11 @@ export default class PsuedoMica extends Plugin {
         gnome: "gsettings get org.gnome.desktop.background picture-uri",
         kde: "kreadconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc --group Wallpaper --group org.kde.image --group General --key Image",
       },
-      // darwin: `osascript -e 'tell application "System Events" to get picture of current desktop'`,
     };
 
     try {
       if (process.platform === "win32") {
         const { stdout } = await this.exec(commands.win32);
-        return stdout.trim();
-      }
-
-      if (process.platform === "darwin") {
-        const { stdout } = await this.exec(commands.darwin);
         return stdout.trim();
       }
 
@@ -61,7 +55,6 @@ export default class PsuedoMica extends Plugin {
       const updatePosition = () => {
         const { screenX, screenY } = window;
 
-        // Only update if position has changed
         if (this.lastPosition.x === screenX && this.lastPosition.y === screenY) {
           this.scheduleNextUpdate();
           return;
@@ -77,8 +70,7 @@ export default class PsuedoMica extends Plugin {
         // Only update position-related styles
         this.styleEl.textContent = `
                 .horizontal-main-container::before {
-                    top: ${-screenY}px;
-                    left: ${-screenX}px;
+                    transform: translate(${-screenX}px, ${-screenY}px);
                 }
             `;
         this.scheduleNextUpdate();
