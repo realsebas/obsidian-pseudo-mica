@@ -99,7 +99,7 @@ export default class CupertinoCompanion extends Plugin {
       const base64Image = await processWallpaperImage(wallpaperPath, window.screen.width, window.screen.height);
 
       const styles = `
-        .horizontal-main-container::before {
+        body::before {
           width: ${window.screen.width}px;
           height: ${window.screen.height}px;
           background-image: url(data:image/jpeg;base64,${base64Image});
@@ -114,7 +114,7 @@ export default class CupertinoCompanion extends Plugin {
         if (this.lastPosition.x !== screenX || this.lastPosition.y !== screenY) {
           Object.assign(this.lastPosition, { x: screenX, y: screenY });
           this.styleEl.textContent = `${styles}
-            .horizontal-main-container::before {
+            body::before {
               transform: translate(${-screenX}px, ${-screenY}px);
             }`;
         }
