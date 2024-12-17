@@ -80,6 +80,90 @@ export default class CupertinoCompanion extends Plugin {
   private lastPosition = { x: 0, y: 0, width: 0, height: 0 };
   private frameRequest: number | null = null;
   private resizeTimer: NodeJS.Timeout | null = null;
+  private isInitialized = false;
+
+  async onload() {
+    // Only add basic classes initially
+    document.body.classList.add("hello-cupertino");
+
+    // Defer heavy initialization
+    this.app.workspace.onLayoutReady(() => {
+      window.requestIdleCallback(() => {
+        this.initialize();
+      });
+    });
+  }
+
+  private async initialize() {
+    if (this.isInitialized) return;
+    this.isInitialized = true;
+
+    if (process.platform === "darwin") {
+      const { remote } = window.require("electron");
+      const setButtonPos = () => remote.getCurrentWindow().setWindowButtonPosition({ x: 16, y: 16 });
+      setButtonPos();
+      window.addEventListener("resize", setButtonPos);
+    } else if (!document.body.classList.contains("mica-off")) {
+      await this.initializeWallpaper();
+      document.body.classList.add("is-translucent");
+    }
+  }
+
+  private async initializeWallpaper() {
+    const wallpaperPath = await this.getWallpaperPath();
+    if (!wallpaperPath) return;
+
+    // Process wallpaper in the background
+    window.requestIdleCallback(async () => {
+      try {
+        const base64Image = await processWallpaperImage(wallpaperPath, window.screen.width, window.screen.height);
+
+        const styles = `
+                  body::before {
+                      width: ${window.screen.width}px;
+                      height: ${window.screen.height}px;
+                      background-image: url(data:image/jpeg;base64,${base64Image});
+                  }
+              `;
+
+        document.head.appendChild(this.styleEl);
+        this.styleEl.textContent = styles;
+
+        this.setupPositionTracking(styles);
+      } catch (error) {
+        console.error("Failed to set wallpaper background:", error);
+      }
+    });
+  }
+
+  private setupPositionTracking(styles: string) {
+    const updatePosition = () => {
+      const { screenX, screenY } = window;
+      if (this.lastPosition.x !== screenX || this.lastPosition.y !== screenY) {
+        Object.assign(this.lastPosition, { x: screenX, y: screenY });
+        this.styleEl.textContent = `${styles}
+                  body::before {
+                      transform: translate(${-screenX}px, ${-screenY}px);
+                  }`;
+      }
+      this.frameRequest = requestAnimationFrame(updatePosition);
+    };
+
+    const handleResize = () => {
+      this.resizeTimer && clearTimeout(this.resizeTimer);
+      this.resizeTimer = setTimeout(updatePosition, 100);
+    };
+
+    window.addEventListener("resize", handleResize);
+    this.frameRequest = requestAnimationFrame(updatePosition);
+
+    this.register(() => {
+      this.frameRequest && cancelAnimationFrame(this.frameRequest);
+      this.resizeTimer && clearTimeout(this.resizeTimer);
+      window.removeEventListener("resize", handleResize);
+      this.styleEl.remove();
+    });
+  }
 
   private async getWallpaperPath(): Promise<string> {
     if (process.platform !== "win32") return "";
@@ -88,70 +172,6 @@ export default class CupertinoCompanion extends Plugin {
       return stdout.trim();
     } catch {
       return "";
-    }
-  }
-
-  private async setWallpaperAsBackground() {
-    const wallpaperPath = await this.getWallpaperPath();
-    if (!wallpaperPath) return;
-
-    try {
-      const base64Image = await processWallpaperImage(wallpaperPath, window.screen.width, window.screen.height);
-
-      const styles = `
-        body::before {
-          width: ${window.screen.width}px;
-          height: ${window.screen.height}px;
-          background-image: url(data:image/jpeg;base64,${base64Image});
-        }
-      `;
-
-      document.head.appendChild(this.styleEl);
-      this.styleEl.textContent = styles;
-
-      const updatePosition = () => {
-        const { screenX, screenY } = window;
-        if (this.lastPosition.x !== screenX || this.lastPosition.y !== screenY) {
-          Object.assign(this.lastPosition, { x: screenX, y: screenY });
-          this.styleEl.textContent = `${styles}
-            body::before {
-              transform: translate(${-screenX}px, ${-screenY}px);
-            }`;
-        }
-        this.frameRequest = requestAnimationFrame(updatePosition);
-      };
-
-      const handleResize = () => {
-        this.resizeTimer && clearTimeout(this.resizeTimer);
-        this.resizeTimer = setTimeout(updatePosition, 100);
-      };
-
-      window.addEventListener("resize", handleResize);
-      this.frameRequest = requestAnimationFrame(updatePosition);
-
-      this.register(() => {
-        this.frameRequest && cancelAnimationFrame(this.frameRequest);
-        this.resizeTimer && clearTimeout(this.resizeTimer);
-        window.removeEventListener("resize", handleResize);
-        this.styleEl.remove();
-      });
-    } catch (error) {
-      console.error("Failed to set wallpaper background:", error);
-    }
-  }
-
-  async onload() {
-    if (process.platform === "darwin") {
-      const { remote } = window.require("electron");
-      const setButtonPos = () => remote.getCurrentWindow().setWindowButtonPosition({ x: 16, y: 16 });
-      setButtonPos();
-      window.addEventListener("resize", setButtonPos);
-      document.body.classList.add("hello-cupertino");
-    } else if (document.body.classList.contains("mica-off")) {
-      document.body.classList.add("hello-cupertino");
-    } else {
-      await this.setWallpaperAsBackground();
-      document.body.classList.add("hello-cupertino", "is-translucent");
     }
   }
 }
