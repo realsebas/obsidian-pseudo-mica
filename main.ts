@@ -147,6 +147,8 @@ export default class CupertinoCompanion extends Plugin {
       setButtonPos();
       window.addEventListener("resize", setButtonPos);
       document.body.classList.add("hello-cupertino");
+    } else if (document.body.classList.contains("mica-off")) {
+      document.body.classList.add("hello-cupertino");
     } else {
       await this.setWallpaperAsBackground();
       document.body.classList.add("hello-cupertino", "is-translucent");
