@@ -9,6 +9,9 @@ interface Position {
   height: number;
 }
 
+// Define type for edge parameters
+type EdgeParams = [number, number, number, number, number, number, number, number];
+
 async function processWallpaperImage(imagePath: string, targetWidth: number, targetHeight: number): Promise<string> {
   const BLUR_SIZE = 240;
   const BLUR_PASSES = 3;
@@ -36,7 +39,7 @@ async function processWallpaperImage(imagePath: string, targetWidth: number, tar
   workCtx.drawImage(img, BLUR_SIZE, BLUR_SIZE);
 
   // Extend edges more efficiently
-  const edges = [
+  const edges: EdgeParams[] = [
     [BLUR_SIZE, BLUR_SIZE, img.width, 1, BLUR_SIZE, 0, img.width, BLUR_SIZE],
     [BLUR_SIZE, img.height + BLUR_SIZE - 1, img.width, 1, BLUR_SIZE, img.height + BLUR_SIZE, img.width, BLUR_SIZE],
     [BLUR_SIZE, BLUR_SIZE, 1, img.height, 0, BLUR_SIZE, BLUR_SIZE, img.height],
