@@ -106,7 +106,7 @@ export default class CupertinoCompanion extends Plugin {
       const setButtonPos = () => remote.getCurrentWindow().setWindowButtonPosition({ x: 16, y: 16 });
       setButtonPos();
       window.addEventListener("resize", setButtonPos);
-    } else if (!document.body.classList.contains("mica-off") && process.platform === "win32") {
+    } else if (process.platform === "win32") {
       await this.initializeWallpaper();
       document.body.classList.add("is-translucent");
     }
