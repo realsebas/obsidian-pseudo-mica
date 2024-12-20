@@ -9,7 +9,6 @@ interface Position {
   height: number;
 }
 
-// Define type for edge parameters
 type EdgeParams = [number, number, number, number, number, number, number, number];
 
 async function processWallpaperImage(imagePath: string, targetWidth: number, targetHeight: number): Promise<string> {
@@ -60,7 +59,7 @@ async function processWallpaperImage(imagePath: string, targetWidth: number, tar
   cornerPositions.forEach(([x, y]) => workCtx.putImageData(corner, x, y));
 
   // Optimized blur
-  const blurSize = BLUR_SIZE / Math.sqrt(3); // Changed from BLUR_SIZE / BLUR_PASSES
+  const blurSize = BLUR_SIZE / Math.sqrt(3);
   workCtx.filter = `blur(${blurSize}px)`;
   for (let i = 0; i < BLUR_PASSES; i++) {
     workCtx.drawImage(workCanvas, 0, 0);
@@ -86,10 +85,8 @@ export default class CupertinoCompanion extends Plugin {
   private isInitialized = false;
 
   async onload() {
-    // Only add basic classes initially
     document.body.classList.add("hello-cupertino");
 
-    // Defer heavy initialization
     this.app.workspace.onLayoutReady(() => {
       window.requestIdleCallback(() => {
         this.initialize();
@@ -116,7 +113,6 @@ export default class CupertinoCompanion extends Plugin {
     const wallpaperPath = await this.getWallpaperPath();
     if (!wallpaperPath) return;
 
-    // Process wallpaper in the background
     window.requestIdleCallback(async () => {
       try {
         const base64Image = await processWallpaperImage(wallpaperPath, window.screen.width, window.screen.height);
