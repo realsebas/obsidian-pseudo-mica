@@ -122,6 +122,12 @@ export default class CupertinoHelper extends Plugin {
                       width: ${window.screen.width}px;
                       height: ${window.screen.height}px;
                       background-image: url(data:image/jpeg;base64,${base64Image});
+                      position: fixed;
+                      transform-origin: top left;
+                      z-index: -1;
+                      background-position: center;
+                      background-size: cover;
+                      content: "";
                   }
               `;
 

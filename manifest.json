@@ -1,7 +1,7 @@
 {
   "id": "cupertino-helper",
   "name": "Cupertino Helper",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "minAppVersion": "1.6.1",
   "description": "Visual extension for Cupertino theme.",
   "author": "Alexis C",
