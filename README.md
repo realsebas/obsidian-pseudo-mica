@@ -1,14 +1,5 @@
-# Cupertino Helper for Obsidian
+# Pseudo Mica for Obsidian
 
-Visual extension for Cupertino theme.
+Add Mica-like background effect for Windows. (Wallpaper as background)
 
-Please refer to the [main repo](https://github.com/aaaaalexis/obsidian-cupertino) for more information.
-
-## Features
-
-- Fix misaligned window control buttons on macOS
-- Add pseudo-Mica (wallpaper as background) on Windows
-
-## Credits
-
-- @chuckharmston — [Electron Window Tweaker](https://github.com/chuckharmston/obsidian-electron-window-tweaker)
+Pseudo Mica is set to `body::before`.

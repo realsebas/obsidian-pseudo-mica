@@ -1,7 +1,7 @@
 {
-  "name": "cupertino-helper",
-  "version": "1.0.2",
-  "description": "Visual extension for Cupertino",
+  "name": "pseudo-mica",
+  "version": "1.0.3",
+  "description": "Mica-like background effect for Windows",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",

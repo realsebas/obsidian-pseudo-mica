@@ -1,9 +1,9 @@
 {
-  "id": "cupertino-helper",
-  "name": "Cupertino Helper",
-  "version": "1.0.2",
+  "id": "pseudo-mica",
+  "name": "Pseudo Mica",
+  "version": "1.0.3",
   "minAppVersion": "1.6.1",
-  "description": "Visual extension for Cupertino theme.",
+  "description": "Mica-like background effect for Windows.",
   "author": "Alexis C",
   "isDesktopOnly": true
 }

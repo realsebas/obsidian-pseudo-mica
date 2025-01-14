@@ -76,7 +76,7 @@ async function processWallpaperImage(imagePath: string, targetWidth: number, tar
   return finalCanvas.toDataURL("image/jpeg", 0.9).split(",")[1];
 }
 
-export default class CupertinoHelper extends Plugin {
+export default class PseudoMica extends Plugin {
   private styleEl = document.createElement("style");
   private readonly exec = promisify(require("child_process").exec);
   private lastPosition = { x: 0, y: 0, width: 0, height: 0 };
@@ -85,28 +85,13 @@ export default class CupertinoHelper extends Plugin {
   private isInitialized = false;
 
   async onload() {
-    document.body.classList.add("cupertino-helper");
+    this.app.workspace.onLayoutReady(async () => {
+      if (this.isInitialized || !Platform.isWin) return;
 
-    this.app.workspace.onLayoutReady(() => {
-      window.requestIdleCallback(() => {
-        this.initialize();
-      });
-    });
-  }
-
-  private async initialize() {
-    if (this.isInitialized) return;
-    this.isInitialized = true;
-
-    if (Platform.isMacOS) {
-      const { remote } = window.require("electron");
-      const setButtonPos = () => remote.getCurrentWindow().setWindowButtonPosition({ x: 16, y: 16 });
-      setButtonPos();
-      window.addEventListener("resize", setButtonPos);
-    } else if (Platform.isWin) {
+      this.isInitialized = true;
       await this.initializeWallpaper();
       document.body.classList.add("is-translucent");
-    }
+    });
   }
 
   private async initializeWallpaper() {
@@ -128,8 +113,7 @@ export default class CupertinoHelper extends Plugin {
                       background-position: center;
                       background-size: cover;
                       content: "";
-                  }
-              `;
+                  }`;
 
         document.head.appendChild(this.styleEl);
         this.styleEl.textContent = styles;
