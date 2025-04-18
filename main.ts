@@ -212,8 +212,11 @@ class PseudoMicaSettingTab extends PluginSettingTab {
     const { containerEl } = this;
 
     containerEl.empty();
-
-    new Setting(containerEl).setHeading().setName("Pseudo Mica");
+    if (Platform.isWin) {
+      new Setting(containerEl).setHeading().setName("Pseudo Mica");
+    } else {
+      new Setting(containerEl).setHeading().setName("Pseudo Mica is disabled on this device").setDesc("Effect only available on Windows.");
+    }
 
     new Setting(containerEl)
       .setName("Blur Intensity")
@@ -229,14 +232,11 @@ class PseudoMicaSettingTab extends PluginSettingTab {
           })
       )
       .addExtraButton((button) => {
-        button
-          .setIcon("reset")
-          .setTooltip("Reset to default")
-          .onClick(async () => {
-            this.plugin.settings.blurSize = DEFAULT_SETTINGS.blurSize;
-            await this.plugin.saveSettings();
-            this.display();
-          });
+        button.setIcon("reset").onClick(async () => {
+          this.plugin.settings.blurSize = DEFAULT_SETTINGS.blurSize;
+          await this.plugin.saveSettings();
+          this.display();
+        });
       });
   }
 }
