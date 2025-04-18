@@ -138,6 +138,9 @@ export default class PseudoMica extends Plugin {
         const base64Image = await processWallpaperImage(wallpaperPath, window.screen.width, window.screen.height, this.settings.blurSize);
 
         const styles = `
+                  body {
+                      --titlebar-background-focused: transparent;
+                  }
                   body::before {
                       width: ${window.screen.width}px;
                       height: ${window.screen.height}px;
@@ -148,6 +151,10 @@ export default class PseudoMica extends Plugin {
                       background-position: center;
                       background-size: cover;
                       content: "";
+                  }
+                      
+                  .is-translucent:not(.is-fullscreen) .titlebar {
+                      background-color: transparent;
                   }`;
 
         document.head.appendChild(this.styleEl);
@@ -220,7 +227,7 @@ class PseudoMicaSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Blur Intensity")
-      .setDesc("Amount of blur applied to the wallpaper background. Value does not impact performance.")
+      .setDesc("Amount of blur applied to the wallpaper background. Higher values may slightly increase initial processing time. Requires restart or settings change to apply.")
       .addSlider((slider) =>
         slider
           .setLimits(10, 500, 10)
