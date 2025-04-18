@@ -1,4 +1,4 @@
-import { Plugin, Platform } from "obsidian";
+import { Plugin, Platform, PluginSettingTab, App, Setting } from "obsidian";
 import { promisify } from "util";
 import * as fs from "fs/promises";
 
@@ -9,10 +9,21 @@ interface Position {
   height: number;
 }
 
+// Define settings interface
+interface PseudoMicaSettings {
+  blurSize: number;
+}
+
+// Define default settings
+const DEFAULT_SETTINGS: PseudoMicaSettings = {
+  blurSize: 240,
+};
+
 type EdgeParams = [number, number, number, number, number, number, number, number];
 
-async function processWallpaperImage(imagePath: string, targetWidth: number, targetHeight: number): Promise<string> {
-  const BLUR_SIZE = 240;
+// Modify function to accept blurSize
+async function processWallpaperImage(imagePath: string, targetWidth: number, targetHeight: number, blurSize: number): Promise<string> {
+  const BLUR_SIZE = blurSize;
   const BLUR_PASSES = 3;
 
   // Create all canvases upfront
@@ -59,8 +70,8 @@ async function processWallpaperImage(imagePath: string, targetWidth: number, tar
   cornerPositions.forEach(([x, y]) => workCtx.putImageData(corner, x, y));
 
   // Optimized blur
-  const blurSize = BLUR_SIZE / Math.sqrt(3);
-  workCtx.filter = `blur(${blurSize}px)`;
+  const blurSizeAdjusted = BLUR_SIZE / Math.sqrt(3);
+  workCtx.filter = `blur(${blurSizeAdjusted}px)`;
   for (let i = 0; i < BLUR_PASSES; i++) {
     workCtx.drawImage(workCanvas, 0, 0);
   }
@@ -77,6 +88,7 @@ async function processWallpaperImage(imagePath: string, targetWidth: number, tar
 }
 
 export default class PseudoMica extends Plugin {
+  settings: PseudoMicaSettings;
   private styleEl = document.createElement("style");
   private readonly exec = promisify(require("child_process").exec);
   private lastPosition = { x: 0, y: 0, width: 0, height: 0 };
@@ -85,6 +97,10 @@ export default class PseudoMica extends Plugin {
   private isInitialized = false;
 
   async onload() {
+    await this.loadSettings();
+
+    this.addSettingTab(new PseudoMicaSettingTab(this.app, this));
+
     this.app.workspace.onLayoutReady(async () => {
       if (this.isInitialized || !Platform.isWin) return;
 
@@ -94,13 +110,32 @@ export default class PseudoMica extends Plugin {
     });
   }
 
+  async loadSettings() {
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+  }
+
+  async saveSettings() {
+    await this.saveData(this.settings);
+    if (this.isInitialized) {
+      this.styleEl.remove();
+      document.body.classList.remove("is-translucent");
+      this.isInitialized = false;
+      this.app.workspace.onLayoutReady(async () => {
+        if (this.isInitialized || !Platform.isWin) return;
+        this.isInitialized = true;
+        await this.initializeWallpaper();
+        document.body.classList.add("is-translucent");
+      });
+    }
+  }
+
   private async initializeWallpaper() {
     const wallpaperPath = await this.getWallpaperPath();
     if (!wallpaperPath) return;
 
     window.requestIdleCallback(async () => {
       try {
-        const base64Image = await processWallpaperImage(wallpaperPath, window.screen.width, window.screen.height);
+        const base64Image = await processWallpaperImage(wallpaperPath, window.screen.width, window.screen.height, this.settings.blurSize);
 
         const styles = `
                   body::before {
@@ -162,5 +197,46 @@ export default class PseudoMica extends Plugin {
     } catch {
       return "";
     }
+  }
+}
+
+class PseudoMicaSettingTab extends PluginSettingTab {
+  plugin: PseudoMica;
+
+  constructor(app: App, plugin: PseudoMica) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+
+  display(): void {
+    const { containerEl } = this;
+
+    containerEl.empty();
+
+    new Setting(containerEl).setHeading().setName("Pseudo Mica");
+
+    new Setting(containerEl)
+      .setName("Blur Intensity")
+      .setDesc("Amount of blur applied to the wallpaper background. Value does not impact performance.")
+      .addSlider((slider) =>
+        slider
+          .setLimits(10, 500, 10)
+          .setValue(this.plugin.settings.blurSize)
+          .setDynamicTooltip()
+          .onChange(async (value) => {
+            this.plugin.settings.blurSize = value;
+            await this.plugin.saveSettings();
+          })
+      )
+      .addExtraButton((button) => {
+        button
+          .setIcon("reset")
+          .setTooltip("Reset to default")
+          .onClick(async () => {
+            this.plugin.settings.blurSize = DEFAULT_SETTINGS.blurSize;
+            await this.plugin.saveSettings();
+            this.display();
+          });
+      });
   }
 }
