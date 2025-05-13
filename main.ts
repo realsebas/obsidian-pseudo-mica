@@ -140,6 +140,10 @@ export default class PseudoMica extends Plugin {
       try {
         const base64Image = await processWallpaperImage(wallpaperPath, window.screen.width, window.screen.height, this.settings.blurSize);
 
+        // Define CSS variables for transform values
+        document.body.style.setProperty("--pseudo-mica-translate-x", "0px");
+        document.body.style.setProperty("--pseudo-mica-translate-y", "0px");
+
         const styles = `
                   body {
                       --titlebar-background-focused: transparent;
@@ -154,6 +158,9 @@ export default class PseudoMica extends Plugin {
                       background-position: center;
                       background-size: cover;
                       content: "";
+                      /* Use CSS variables for transform and hint for optimization */
+                      transform: translate(var(--pseudo-mica-translate-x, 0px), var(--pseudo-mica-translate-y, 0px));
+                      will-change: transform;
                   }
                       
                   .is-translucent:not(.is-fullscreen) .titlebar {
@@ -163,39 +170,49 @@ export default class PseudoMica extends Plugin {
         document.head.appendChild(this.styleEl);
         this.styleEl.textContent = styles;
 
-        this.setupPositionTracking(styles);
+        this.setupPositionTracking(); // Pass no arguments
       } catch (error) {
         console.error("Failed to set wallpaper background:", error);
       }
     });
   }
 
-  private setupPositionTracking(styles: string) {
+  private setupPositionTracking() {
+    // Removed 'styles' parameter
     const updatePosition = () => {
       const { screenX, screenY } = window;
       if (this.lastPosition.x !== screenX || this.lastPosition.y !== screenY) {
         Object.assign(this.lastPosition, { x: screenX, y: screenY });
-        this.styleEl.textContent = `${styles}
-                  body::before {
-                      transform: translate(${-screenX}px, ${-screenY}px);
-                  }`;
+        // Update CSS variables directly on the body's style
+        document.body.style.setProperty("--pseudo-mica-translate-x", `${-screenX}px`);
+        document.body.style.setProperty("--pseudo-mica-translate-y", `${-screenY}px`);
       }
       this.frameRequest = requestAnimationFrame(updatePosition);
     };
 
     const handleResize = () => {
       this.resizeTimer && clearTimeout(this.resizeTimer);
-      this.resizeTimer = setTimeout(updatePosition, 100);
+      this.resizeTimer = setTimeout(() => {
+        // Ensure position is updated on resize completion
+        updatePosition();
+        // Potentially re-initialize if screen dimensions for wallpaper change significantly
+        // For now, just update position. If wallpaper re-rendering on resize is needed,
+        // that would be a more complex change involving re-calling initializeWallpaper logic.
+      }, 100);
     };
 
     window.addEventListener("resize", handleResize);
-    this.frameRequest = requestAnimationFrame(updatePosition);
+    // Initial position update
+    updatePosition();
 
     this.register(() => {
       this.frameRequest && cancelAnimationFrame(this.frameRequest);
       this.resizeTimer && clearTimeout(this.resizeTimer);
       window.removeEventListener("resize", handleResize);
       this.styleEl.remove();
+      // Clean up CSS variables if necessary
+      document.body.style.removeProperty("--pseudo-mica-translate-x");
+      document.body.style.removeProperty("--pseudo-mica-translate-y");
     });
   }
 
