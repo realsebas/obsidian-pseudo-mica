@@ -76,12 +76,15 @@ async function processWallpaperImage(imagePath: string, targetWidth: number, tar
     workCtx.drawImage(workCanvas, 0, 0);
   }
 
-  // Final scaling in one step
+  // Final processing: output blurred image at original dimensions
   const finalCanvas = document.createElement("canvas");
-  finalCanvas.width = targetWidth;
-  finalCanvas.height = targetHeight;
+  finalCanvas.width = img.width; // Use original image width
+  finalCanvas.height = img.height; // Use original image height
   const finalCtx = finalCanvas.getContext("2d", { alpha: false })!;
-  finalCtx.drawImage(workCanvas, BLUR_SIZE, BLUR_SIZE, img.width, img.height, 0, 0, targetWidth, targetHeight);
+
+  // Draw the processed (blurred) portion of the workCanvas, corresponding to the original image,
+  // onto the finalCanvas without scaling.
+  finalCtx.drawImage(workCanvas, BLUR_SIZE, BLUR_SIZE, img.width, img.height, 0, 0, img.width, img.height);
 
   URL.revokeObjectURL(img.src);
   return finalCanvas.toDataURL("image/jpeg", 0.9).split(",")[1];
